@@ -3,8 +3,7 @@ import Gtk from 'gi://Gtk'
 import Adw from 'gi://Adw'
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
-
-export default class ActivateGnomeExtensionPreferences extends ExtensionPreferences {
+export default class HostnameIPExtensionPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const page = new Adw.PreferencesPage()
         window.add(page)
@@ -33,7 +32,7 @@ export default class ActivateGnomeExtensionPreferences extends ExtensionPreferen
         prefsWidget.append(label_line_2_vertical_position)
 
         let scale_line_2_vertical_position = new Gtk.Scale({
-            adjustment: new Gtk.Adjustment({lower: 0.01, upper: 1.0, step_increment: 0.01, page_increment: 0.1}),
+            adjustment: new Gtk.Adjustment({ lower: 0.01, upper: 1.0, step_increment: 0.01, page_increment: 0.1 }),
             margin_top: 6,
             draw_value: false,
             digits: 4,
@@ -49,7 +48,7 @@ export default class ActivateGnomeExtensionPreferences extends ExtensionPreferen
         prefsWidget.append(label_line_2_horizontal_position)
 
         let scale_line_2_horizontal_position = new Gtk.Scale({
-            adjustment: new Gtk.Adjustment({lower: 0.01, upper: 1.0, step_increment: 0.01, page_increment: 0.1}),
+            adjustment: new Gtk.Adjustment({ lower: 0.01, upper: 1.0, step_increment: 0.01, page_increment: 0.1 }),
             margin_top: 6,
             draw_value: false,
             digits: 4,
@@ -65,7 +64,7 @@ export default class ActivateGnomeExtensionPreferences extends ExtensionPreferen
         prefsWidget.append(label_line_1_text_size)
 
         let spinbutton_line_1_text_size = new Gtk.SpinButton({
-            adjustment: new Gtk.Adjustment({lower: 1.0, upper: 65535.0, step_increment: 1.0, page_increment: 10.0}),
+            adjustment: new Gtk.Adjustment({ lower: 1.0, upper: 65535.0, step_increment: 1.0, page_increment: 10.0 }),
             margin_top: 6,
             numeric: true,
             digits: 1,
@@ -81,7 +80,7 @@ export default class ActivateGnomeExtensionPreferences extends ExtensionPreferen
         prefsWidget.append(label_line_2_text_size)
 
         let spinbutton_line_2_text_size = new Gtk.SpinButton({
-            adjustment: new Gtk.Adjustment({lower: 1.0, upper: 65535.0, step_increment: 1.0, page_increment: 10.0}),
+            adjustment: new Gtk.Adjustment({ lower: 1.0, upper: 65535.0, step_increment: 1.0, page_increment: 10.0 }),
             margin_top: 6,
             numeric: true,
             digits: 1,
@@ -97,7 +96,7 @@ export default class ActivateGnomeExtensionPreferences extends ExtensionPreferen
         prefsWidget.append(label_opacity)
 
         let scale_opacity = new Gtk.Scale({
-            adjustment: new Gtk.Adjustment({lower: 0.1, upper: 255, step_increment: 0.1, page_increment: 1}),
+            adjustment: new Gtk.Adjustment({ lower: 0.1, upper: 255, step_increment: 0.1, page_increment: 1 }),
             margin_top: 6,
             draw_value: false,
             digits: 1,

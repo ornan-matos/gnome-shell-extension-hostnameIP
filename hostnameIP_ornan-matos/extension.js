@@ -20,8 +20,7 @@ import St from 'gi://St'
 import * as Main from 'resource:///org/gnome/shell/ui/main.js'
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js'
 import GLib from 'gi://GLib'
-
-export default class ActivateGnomeExtension extends Extension {
+export default class HostnameIPExtension extends Extension {
     constructor(metadata) {
         super(metadata)
         this.labels = []
@@ -34,7 +33,7 @@ export default class ActivateGnomeExtension extends Extension {
     _getIP() {
         // Executa 'hostname -I' para obter endereços IP
         let [ok, stdout, stderr, exitStatus] = GLib.spawn_command_line_sync('hostname -I');
-        
+
         if (ok && exitStatus === 0 && stdout.length > 0) {
             // Decodifica a saída, remove espaços extras e pega o primeiro IP
             let ip_list = new TextDecoder().decode(stdout).trim().split(' ');
@@ -49,7 +48,7 @@ export default class ActivateGnomeExtension extends Extension {
         // Texto é definido dinamicamente em vez de lido das configurações
         let text1 = GLib.get_host_name(); // Linha 1 é o hostname
         let text2 = this._getIP();           // Linha 2 é o IP
-        
+
         // Lê outras configurações
         let vl2 = this.settings_get('get_double', 'l2-vertical')
         let hl2 = this.settings_get('get_double', 'l2-horizontal')
@@ -59,18 +58,18 @@ export default class ActivateGnomeExtension extends Extension {
 
         this.cleanup()
         for (let monitor of Main.layoutManager.monitors) {
-            let label_1 = new St.Label({style_class: 'label-1', text: text1, opacity})
-            let label_2 = new St.Label({style_class: 'label-2', text: text2, opacity})
+            let label_1 = new St.Label({ style_class: 'label-1', text: text1, opacity })
+            let label_2 = new St.Label({ style_class: 'label-2', text: text2, opacity })
             label_1.set_style(`font-size: ${size1}px`)
             label_2.set_style(`font-size: ${size2}px`)
-            
+
             // Alterado de {"affectsInputRegion": true} para {"affectsInputRegion": false}
-            let params = {"trackFullscreen": false, "affectsStruts": false, "affectsInputRegion": false}
-            
+            let params = { "trackFullscreen": false, "affectsStruts": false, "affectsInputRegion": false }
+
             // Alterado de addTopChrome para addChrome
             Main.layoutManager.addChrome(label_2, params)
             Main.layoutManager.addChrome(label_1, params)
-            
+
             this.labels.push(label_1)
             this.labels.push(label_2)
             let h = Math.max(0, Math.floor(monitor.height * vl2 - label_2.height))
@@ -90,7 +89,7 @@ export default class ActivateGnomeExtension extends Extension {
 
     enable() {
         this.settings = this.getSettings()
-        
+
         // Adiciona um handler para 'changed' apenas para configurações que ainda usamos
         this.handlers.push({
             owner: this.settings,
