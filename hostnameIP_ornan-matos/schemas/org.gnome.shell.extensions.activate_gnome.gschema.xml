@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<schemalist gettext-domain="activate_gnome">
-  <schema id="org.gnome.shell.extensions.activate_gnome" path="/org/gnome/shell/extensions/activate_gnome/">
+<schemalist gettext-domain="hostnameIP">
+  <schema id="org.gnome.shell.extensions.hostnameIP" path="/org/gnome/shell/extensions/hostnameIP/">
     <key name="l2-vertical" type="d">
       <default>0.9444444444444444</default>
       <summary>Vertical position of line 2</summary>
