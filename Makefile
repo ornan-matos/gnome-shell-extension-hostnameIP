@@ -1,5 +1,7 @@
 schemdir = ./hostnameIP_ornan-matos/schemas
+
 $(schemdir)/gschemas.compiled: $(schemdir)/org.gnome.shell.extensions.hostnameIP.gschema.xml
 	glib-compile-schemas $(schemdir)/
+
 clean:
-	rm $(schemdir)/gschemas.compiled
+	rm -f $(schemdir)/gschemas.compiled
