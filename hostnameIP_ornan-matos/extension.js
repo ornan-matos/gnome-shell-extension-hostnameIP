@@ -20,7 +20,7 @@ import St from 'gi://St'
 import * as Main from 'resource:///org/gnome/shell/ui/main.js'
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js'
 import GLib from 'gi://GLib'
-import Gio from 'gi://Gio' // <-- ADICIONADO
+import Gio from 'gi://Gio'
 
 export default class HostnameIPExtension extends Extension {
     constructor(metadata) {
@@ -129,8 +129,6 @@ export default class HostnameIPExtension extends Extension {
             owner: Main.layoutManager,
             id: Main.layoutManager.connect('startup-complete', () => this.update())
         })
-
-        // --- Bloco do Timer REMOVIDO ---
 
         // Inicializa o monitor de rede e conecta ao sinal 'network-changed'
         this._monitor = Gio.NetworkMonitor.get_default();
