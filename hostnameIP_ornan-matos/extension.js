@@ -20,6 +20,8 @@ import St from 'gi://St'
 import * as Main from 'resource:///org/gnome/shell/ui/main.js'
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js'
 import GLib from 'gi://GLib'
+import Gio from 'gi://Gio' // <-- ADICIONADO
+
 export default class HostnameIPExtension extends Extension {
     constructor(metadata) {
         super(metadata)
@@ -27,21 +29,39 @@ export default class HostnameIPExtension extends Extension {
         this.settings = null
         this.handlers = []
         this.settings_get = (method, key) => this.settings[method](key) || this.settings.get_default_value(key)[method]()
-        this._timeout = null
+
+        // Propriedades para o Network Monitor
+        this._monitor = null;
+        this._networkChangedId = null;
     }
 
     _getIP() {
-        // Executa 'hostname -I' para obter endereços IP
-        let [ok, stdout, stderr, exitStatus] = GLib.spawn_command_line_sync('hostname -I');
-
-        if (ok && exitStatus === 0 && stdout.length > 0) {
-            // Decodifica a saída, remove espaços extras e pega o primeiro IP
-            let ip_list = new TextDecoder().decode(stdout).trim().split(' ');
-            return ip_list[0] || 'IP not found'; // Retorna o primeiro IP
-        } else {
-            this.log(`Failed to get IP: ${new TextDecoder().decode(stderr)}`);
+        // Usa a API nativa Gio.NetworkMonitor (assíncrona) em vez de spawn_sync
+        if (!this._monitor) {
             return 'IP not found';
         }
+
+        // Verifica a conectividade
+        let connectivity = this._monitor.get_connectivity();
+        if (connectivity !== Gio.NetworkConnectivity.FULL && connectivity !== Gio.NetworkConnectivity.LIMITED) {
+            return 'No connection';
+        }
+
+        // Obtém os endereços de rede
+        let addresses = this._monitor.get_network_addresses();
+        if (!addresses) {
+            return 'IP not found';
+        }
+
+        // Filtra para encontrar o primeiro endereço IPv4 que não seja loopback
+        for (const addr of addresses) {
+            if (addr.get_family() === Gio.SocketFamily.IPV4 && !addr.is_loopback()) {
+                return addr.to_string(); // Retorna o endereço IP como string
+            }
+        }
+
+        // Se nenhum IP IPv4 for encontrado
+        return 'IP not found';
     }
 
     update() {
@@ -110,21 +130,26 @@ export default class HostnameIPExtension extends Extension {
             id: Main.layoutManager.connect('startup-complete', () => this.update())
         })
 
-        // Adiciona um timer para atualizar o IP periodicamente (a cada 30 segundos)
-        this._timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 30000, () => {
-            this.update();
-            return GLib.SOURCE_CONTINUE; // Manter o timer ativo
+        // --- Bloco do Timer REMOVIDO ---
+
+        // Inicializa o monitor de rede e conecta ao sinal 'network-changed'
+        this._monitor = Gio.NetworkMonitor.get_default();
+        this._networkChangedId = this._monitor.connect('network-changed', () => {
+            this.update(); // Atualiza quando a rede mudar
         });
+
 
         if (!Main.layoutManager._startingUp) this.update()
     }
 
     disable() {
-        // Remove o timer
-        if (this._timeout) {
-            GLib.source_remove(this._timeout);
-            this._timeout = null;
+        // Remove o "listener" do monitor de rede
+        if (this._networkChangedId) {
+            this._monitor.disconnect(this._networkChangedId);
+            this._networkChangedId = null;
         }
+        this._monitor = null;
+
 
         this.cleanup()
         for (let handler of this.handlers) {
