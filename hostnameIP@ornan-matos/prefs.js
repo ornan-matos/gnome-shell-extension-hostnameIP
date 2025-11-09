@@ -1,128 +1,148 @@
-import Gio from 'gi://Gio'
-import Gtk from 'gi://Gtk'
-import Adw from 'gi://Adw'
+'use strict';
 
-import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
-export default class HostnameIPExtensionPreferences extends ExtensionPreferences {
-    fillPreferencesWindow(window) {
-        const page = new Adw.PreferencesPage()
-        window.add(page)
+const { Adw, Gio, Gtk } = imports.gi;
 
-        const group = new Adw.PreferencesGroup()
-        page.add(group)
+function init() { }
 
-        this.settings = this.getSettings()
+function fillPreferencesWindow(window) {
+    const settings = new Gio.Settings({
+        schema_id: 'org.gnome.shell.extensions.hostnameIP',
+    });
 
-        let prefsWidget = new Gtk.Box({
-            orientation: Gtk.Orientation.VERTICAL,
-            halign: Gtk.Align.CENTER,
-            spacing: 6,
-            margin_top: 12,
-            margin_bottom: 12,
-            margin_start: 6,
-            margin_end: 6,
-        })
+    // Criar página principal
+    const page = new Adw.PreferencesPage();
 
-        // line 2 vertical position
-        let label_line_2_vertical_position = new Gtk.Label({
-            label: '<b>Vertical Position</b>',
-            margin_top: 12,
-            use_markup: true,
-        })
-        prefsWidget.append(label_line_2_vertical_position)
+    // Seção de posição
+    const positionGroup = new Adw.PreferencesGroup({
+        title: 'Posição do texto',
+        description: 'Ajuste a posição da segunda linha (hostname/IP).',
+    });
 
-        let scale_line_2_vertical_position = new Gtk.Scale({
-            adjustment: new Gtk.Adjustment({ lower: 0.01, upper: 1.0, step_increment: 0.01, page_increment: 0.1 }),
-            margin_top: 6,
-            draw_value: false,
-            digits: 4,
-        })
-        prefsWidget.append(scale_line_2_vertical_position)
+    const sliderVertical = new Gtk.Scale({
+        orientation: Gtk.Orientation.HORIZONTAL,
+        adjustment: new Gtk.Adjustment({
+            lower: 0.0,
+            upper: 1.0,
+            step_increment: 0.01,
+            page_increment: 0.1,
+            value: settings.get_double('l2-vertical'),
+        }),
+        digits: 2,
+        hexpand: true,
+    });
+    sliderVertical.connect('value-changed', w => {
+        settings.set_double('l2-vertical', w.get_value());
+    });
 
-        // line 2 horizontal position
-        let label_line_2_horizontal_position = new Gtk.Label({
-            label: '<b>Horizontal Position</b>',
-            margin_top: 6,
-            use_markup: true,
-        })
-        prefsWidget.append(label_line_2_horizontal_position)
+    const sliderHorizontal = new Gtk.Scale({
+        orientation: Gtk.Orientation.HORIZONTAL,
+        adjustment: new Gtk.Adjustment({
+            lower: 0.0,
+            upper: 1.0,
+            step_increment: 0.01,
+            page_increment: 0.1,
+            value: settings.get_double('l2-horizontal'),
+        }),
+        digits: 2,
+        hexpand: true,
+    });
+    sliderHorizontal.connect('value-changed', w => {
+        settings.set_double('l2-horizontal', w.get_value());
+    });
 
-        let scale_line_2_horizontal_position = new Gtk.Scale({
-            adjustment: new Gtk.Adjustment({ lower: 0.01, upper: 1.0, step_increment: 0.01, page_increment: 0.1 }),
-            margin_top: 6,
-            draw_value: false,
-            digits: 4,
-        })
-        prefsWidget.append(scale_line_2_horizontal_position)
+    positionGroup.add(new Adw.ActionRow({
+        title: 'Posição vertical (linha 2)',
+        activatable_widget: sliderVertical,
+    }));
+    positionGroup.add(sliderVertical);
 
-        // line 1 text size
-        let label_line_1_text_size = new Gtk.Label({
-            label: '<b>Line 1 Text Size</b>',
-            margin_top: 12,
-            use_markup: true,
-        })
-        prefsWidget.append(label_line_1_text_size)
+    positionGroup.add(new Adw.ActionRow({
+        title: 'Posição horizontal (linha 2)',
+        activatable_widget: sliderHorizontal,
+    }));
+    positionGroup.add(sliderHorizontal);
 
-        let spinbutton_line_1_text_size = new Gtk.SpinButton({
-            adjustment: new Gtk.Adjustment({ lower: 1.0, upper: 65535.0, step_increment: 1.0, page_increment: 10.0 }),
-            margin_top: 6,
-            numeric: true,
-            digits: 1,
-        })
-        prefsWidget.append(spinbutton_line_1_text_size)
+    // Seção de aparência
+    const appearanceGroup = new Adw.PreferencesGroup({
+        title: 'Aparência',
+        description: 'Tamanho e opacidade do texto exibido na tela.',
+    });
 
-        // line 2 text size
-        let label_line_2_text_size = new Gtk.Label({
-            label: '<b>Line 2 Text Size</b>',
-            margin_top: 6,
-            use_markup: true,
-        })
-        prefsWidget.append(label_line_2_text_size)
+    const opacityScale = new Gtk.Scale({
+        orientation: Gtk.Orientation.HORIZONTAL,
+        adjustment: new Gtk.Adjustment({
+            lower: 0,
+            upper: 255,
+            step_increment: 1,
+            page_increment: 10,
+            value: settings.get_int('opacity'),
+        }),
+        digits: 0,
+        hexpand: true,
+    });
+    opacityScale.connect('value-changed', w => {
+        settings.set_int('opacity', w.get_value());
+    });
 
-        let spinbutton_line_2_text_size = new Gtk.SpinButton({
-            adjustment: new Gtk.Adjustment({ lower: 1.0, upper: 65535.0, step_increment: 1.0, page_increment: 10.0 }),
-            margin_top: 6,
-            numeric: true,
-            digits: 1,
-        })
-        prefsWidget.append(spinbutton_line_2_text_size)
+    const sizeL1Scale = new Gtk.Scale({
+        orientation: Gtk.Orientation.HORIZONTAL,
+        adjustment: new Gtk.Adjustment({
+            lower: 8,
+            upper: 100,
+            step_increment: 1,
+            page_increment: 5,
+            value: settings.get_int('size-l1'),
+        }),
+        digits: 0,
+        hexpand: true,
+    });
+    sizeL1Scale.connect('value-changed', w => {
+        settings.set_int('size-l1', w.get_value());
+    });
 
-        // opacity
-        let label_opacity = new Gtk.Label({
-            label: '<b>Opacity</b>',
-            margin_top: 6,
-            use_markup: true,
-        })
-        prefsWidget.append(label_opacity)
+    const sizeL2Scale = new Gtk.Scale({
+        orientation: Gtk.Orientation.HORIZONTAL,
+        adjustment: new Gtk.Adjustment({
+            lower: 8,
+            upper: 100,
+            step_increment: 1,
+            page_increment: 5,
+            value: settings.get_int('size-l2'),
+        }),
+        digits: 0,
+        hexpand: true,
+    });
+    sizeL2Scale.connect('value-changed', w => {
+        settings.set_int('size-l2', w.get_value());
+    });
 
-        let scale_opacity = new Gtk.Scale({
-            adjustment: new Gtk.Adjustment({ lower: 0.1, upper: 255, step_increment: 0.1, page_increment: 1 }),
-            margin_top: 6,
-            draw_value: false,
-            digits: 1,
-        })
-        prefsWidget.append(scale_opacity)
+    appearanceGroup.add(new Adw.ActionRow({
+        title: 'Opacidade (0–255)',
+        activatable_widget: opacityScale,
+    }));
+    appearanceGroup.add(opacityScale);
 
-        let button_reset = new Gtk.Button({
-            label: 'reset',
-            margin_top: 12,
-            margin_bottom: 6,
-        })
-        button_reset.connect('clicked', () => {
-            this.settings.reset('l2-vertical')
-            this.settings.reset('l2-horizontal')
-            this.settings.reset('size-l1')
-            this.settings.reset('size-l2')
-            this.settings.reset('opacity')
-        })
-        prefsWidget.append(button_reset)
+    appearanceGroup.add(new Adw.ActionRow({
+        title: 'Tamanho da linha 1 (px)',
+        activatable_widget: sizeL1Scale,
+    }));
+    appearanceGroup.add(sizeL1Scale);
 
-        this.settings.bind('l2-vertical', scale_line_2_vertical_position.adjustment, 'value', Gio.SettingsBindFlags.DEFAULT)
-        this.settings.bind('l2-horizontal', scale_line_2_horizontal_position.adjustment, 'value', Gio.SettingsBindFlags.DEFAULT)
-        this.settings.bind('size-l1', spinbutton_line_1_text_size.adjustment, 'value', Gio.SettingsBindFlags.DEFAULT)
-        this.settings.bind('size-l2', spinbutton_line_2_text_size.adjustment, 'value', Gio.SettingsBindFlags.DEFAULT)
-        this.settings.bind('opacity', scale_opacity.adjustment, 'value', Gio.SettingsBindFlags.DEFAULT)
+    appearanceGroup.add(new Adw.ActionRow({
+        title: 'Tamanho da linha 2 (px)',
+        activatable_widget: sizeL2Scale,
+    }));
+    appearanceGroup.add(sizeL2Scale);
 
-        group.add(prefsWidget);
-    }
+    // Montar janela
+    page.add(positionGroup);
+    page.add(appearanceGroup);
+    window.add(page);
 }
+
+function buildPrefsWidget() {
+    const window = new Adw.PreferencesWindow();
+    fillPreferencesWindow(window);
+    return window;
+}
+

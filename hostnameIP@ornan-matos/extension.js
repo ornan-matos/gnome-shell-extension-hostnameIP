@@ -1,159 +1,99 @@
-/* extension.js
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
+'use strict';
 
-import St from 'gi://St'
-import * as Main from 'resource:///org/gnome/shell/ui/main.js'
-import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js'
-import GLib from 'gi://GLib'
-import Gio from 'gi://Gio'
+const { St, Gio, GLib, GObject, Clutter } = imports.gi;
+const Main = imports.ui.main;
+const ExtensionUtils = imports.misc.extensionUtils;
 
-export default class HostnameIPExtension extends Extension {
-    constructor(metadata) {
-        super(metadata)
-        this.labels = []
-        this.settings = null
-        this.handlers = []
-        this.settings_get = (method, key) => this.settings[method](key) || this.settings.get_default_value(key)[method]()
+let hostnameLabel, ipLabel;
+let settings;
 
-        // Propriedades para o Network Monitor
-        this._monitor = null;
-        this._networkChangedId = null;
-    }
-
-    _getIP() {
-        // Usa a API nativa Gio.NetworkMonitor (assíncrona) em vez de spawn_sync
-        if (!this._monitor) {
-            return 'IP not found';
-        }
-
-        // Verifica a conectividade
-        let connectivity = this._monitor.get_connectivity();
-        if (connectivity !== Gio.NetworkConnectivity.FULL && connectivity !== Gio.NetworkConnectivity.LIMITED) {
-            return 'No connection';
-        }
-
-        // Obtém os endereços de rede
-        let addresses = this._monitor.get_network_addresses();
-        if (!addresses) {
-            return 'IP not found';
-        }
-
-        // Filtra para encontrar o primeiro endereço IPv4 que não seja loopback
-        for (const addr of addresses) {
-            if (addr.get_family() === Gio.SocketFamily.IPV4 && !addr.is_loopback()) {
-                return addr.to_string(); // Retorna o endereço IP como string
-            }
-        }
-
-        // Se nenhum IP IPv4 for encontrado
-        return 'IP not found';
-    }
-
-    update() {
-        // Texto é definido dinamicamente em vez de lido das configurações
-        let text1 = GLib.get_host_name(); // Linha 1 é o hostname
-        let text2 = this._getIP();           // Linha 2 é o IP
-
-        // Lê outras configurações
-        let vl2 = this.settings_get('get_double', 'l2-vertical')
-        let hl2 = this.settings_get('get_double', 'l2-horizontal')
-        let size1 = parseInt(this.settings_get('get_double', 'size-l1'))
-        let size2 = parseInt(this.settings_get('get_double', 'size-l2'))
-        let opacity = this.settings_get('get_double', 'opacity')
-
-        this.cleanup()
-        for (let monitor of Main.layoutManager.monitors) {
-            let label_1 = new St.Label({ style_class: 'label-1', text: text1, opacity })
-            let label_2 = new St.Label({ style_class: 'label-2', text: text2, opacity })
-            label_1.set_style(`font-size: ${size1}px`)
-            label_2.set_style(`font-size: ${size2}px`)
-
-            // Alterado de {"affectsInputRegion": true} para {"affectsInputRegion": false}
-            let params = { "trackFullscreen": false, "affectsStruts": false, "affectsInputRegion": false }
-
-            // Alterado de addTopChrome para addChrome
-            Main.layoutManager.addChrome(label_2, params)
-            Main.layoutManager.addChrome(label_1, params)
-
-            this.labels.push(label_1)
-            this.labels.push(label_2)
-            let h = Math.max(0, Math.floor(monitor.height * vl2 - label_2.height))
-            let w = Math.max(0, Math.floor(monitor.width * hl2 - label_2.width))
-            label_2.set_position(monitor.x + w, monitor.y + h)
-            label_1.set_position(Math.min(monitor.x + w, monitor.x + monitor.width - label_1.width), monitor.y + h - label_1.height)
-        }
-    }
-
-    cleanup() {
-        for (let label of this.labels) {
-            Main.layoutManager.removeChrome(label) // Não é mais 'removeChrome', mas removeChrome lida com ambos
-            label.destroy()
-        }
-        this.labels = []
-    }
-
+const HostnameIPExtension = class HostnameIPExtension {
     enable() {
-        this.settings = this.getSettings()
+        settings = ExtensionUtils.getSettings(
+            'org.gnome.shell.extensions.hostnameIP'
+        );
 
-        // Adiciona um handler para 'changed' apenas para configurações que ainda usamos
-        this.handlers.push({
-            owner: this.settings,
-            id: this.settings.connect('changed', (settings, key) => {
-                // Se uma configuração que não seja de texto mudar, atualize
-                if (key !== 'text-l1' && key !== 'text-l2') {
-                    this.update();
-                }
-            })
+        // Obter hostname
+        const [okHost, hostname] = GLib.hostname_get();
+        const ip = this._getLocalIP();
+
+        // Criar labels
+        hostnameLabel = new St.Label({
+            text: hostname || 'Unknown Host',
+            style_class: 'label-1',
         });
 
-        this.handlers.push({
-            owner: Main.layoutManager,
-            id: Main.layoutManager.connect('monitors-changed', () => this.update())
-        })
-        this.handlers.push({
-            owner: Main.layoutManager,
-            id: Main.layoutManager.connect('startup-complete', () => this.update())
-        })
-
-        // Inicializa o monitor de rede e conecta ao sinal 'network-changed'
-        this._monitor = Gio.NetworkMonitor.get_default();
-        this._networkChangedId = this._monitor.connect('network-changed', () => {
-            this.update(); // Atualiza quando a rede mudar
+        ipLabel = new St.Label({
+            text: ip || '0.0.0.0',
+            style_class: 'label-2',
         });
 
+        this._applyStyle();
 
-        if (!Main.layoutManager._startingUp) this.update()
+        // Adicionar ao stage
+        Main.layoutManager.addChrome(hostnameLabel);
+        Main.layoutManager.addChrome(ipLabel);
+
+        this._updatePosition();
+
+        // Reagir a mudanças de configuração
+        this._changedIds = [
+            settings.connect('changed::l2-vertical', () => this._updatePosition()),
+            settings.connect('changed::l2-horizontal', () => this._updatePosition()),
+            settings.connect('changed::opacity', () => this._applyStyle()),
+            settings.connect('changed::size-l1', () => this._applyStyle()),
+            settings.connect('changed::size-l2', () => this._applyStyle()),
+        ];
     }
 
     disable() {
-        // Remove o "listener" do monitor de rede
-        if (this._networkChangedId) {
-            this._monitor.disconnect(this._networkChangedId);
-            this._networkChangedId = null;
-        }
-        this._monitor = null;
+        if (hostnameLabel) hostnameLabel.destroy();
+        if (ipLabel) ipLabel.destroy();
+        hostnameLabel = null;
+        ipLabel = null;
 
-
-        this.cleanup()
-        for (let handler of this.handlers) {
-            handler.owner.disconnect(handler.id)
+        if (this._changedIds) {
+            this._changedIds.forEach(id => settings.disconnect(id));
+            this._changedIds = null;
         }
-        this.handlers = []
-        this.settings = null
+
+        settings = null;
     }
+
+    _applyStyle() {
+        const opacity = settings.get_int('opacity');
+        const sizeL1 = settings.get_int('size-l1');
+        const sizeL2 = settings.get_int('size-l2');
+
+        hostnameLabel.set_style(`font-size: ${sizeL1}px; opacity: ${opacity / 255};`);
+        ipLabel.set_style(`font-size: ${sizeL2}px; opacity: ${opacity / 255};`);
+    }
+
+    _updatePosition() {
+        const vert = settings.get_double('l2-vertical');
+        const horiz = settings.get_double('l2-horizontal');
+
+        const monitor = Main.layoutManager.primaryMonitor;
+        const x = monitor.x + monitor.width * horiz;
+        const y = monitor.y + monitor.height * vert;
+
+        hostnameLabel.set_position(x, y - 40);
+        ipLabel.set_position(x, y);
+    }
+
+    _getLocalIP() {
+        try {
+            const [ok, out] = GLib.spawn_command_line_sync('hostname -I');
+            if (ok && out)
+                return out.toString().trim().split(' ')[0];
+        } catch (e) {
+            logError(e);
+        }
+        return null;
+    }
+};
+
+function init() {
+    return new HostnameIPExtension();
 }
+
