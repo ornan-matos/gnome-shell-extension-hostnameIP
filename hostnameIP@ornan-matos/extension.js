@@ -2,6 +2,7 @@
 
 import St from 'gi://St';
 import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -120,15 +121,29 @@ export default class HostnameIPExtension extends Extension {
     }
 
     _getLocalIP() {
+        // 1) Tenta resolver o hostname via DNS (Gio.Resolver)
         try {
-            // Executa `hostname -I` para obter os IPs
+            const hostname = GLib.get_host_name();
+            const resolver = Gio.Resolver.get_default();
+            const addresses = resolver.lookup_by_name(hostname, null);
+
+            for (const addr of addresses) {
+                if (addr.get_family() === Gio.SocketFamily.IPV4) {
+                    return addr.to_string();
+                }
+            }
+        } catch (e) {
+            logError(e, 'Falha ao obter IP via Gio.Resolver');
+        }
+
+        // 2) Fallback: usar `hostname -I`
+        try {
             const [ok, out, err, status] =
                 GLib.spawn_command_line_sync('hostname -I');
 
             if (!ok || status !== 0 || !out)
                 return null;
 
-            // out é um Uint8Array / ArrayBuffer → converte com TextDecoder
             const decoder = new TextDecoder('utf-8');
             const stdout = decoder.decode(out).trim();
 
