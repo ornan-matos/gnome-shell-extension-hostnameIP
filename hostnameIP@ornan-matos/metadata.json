@@ -1,13 +1,14 @@
 {
     "name": "Show Hostname and IP",
     "description": "Shows hostname and local IP address on your screen.",
-    "uuid": "hostnameIP_ornan-matos",
+    "uuid": "hostnameIP@ornan-matos",
     "settings-schema": "org.gnome.shell.extensions.hostnameIP",
     "shell-version": [
         "45",
         "46",
         "47",
-        "48"
+        "48",
+        "49"
     ],
     "version": 1,
     "url": "https://github.com/ornan-matos/gnome-shell-extension-hostnameIP"
