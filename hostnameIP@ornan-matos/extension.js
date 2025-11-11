@@ -77,18 +77,39 @@ const HostnameIPExtension = class HostnameIPExtension {
         const x = monitor.x + monitor.width * horiz;
         const y = monitor.y + monitor.height * vert;
 
-        hostnameLabel.set_position(x, y - 40);
+        // Ajuste para que o label2 (IP) fique em y, e o label1 (hostname) fique acima dele.
+        // O valor 40 estava fixo, é melhor usar a altura do próprio label.
+        const l1Height = hostnameLabel.get_height() > 0 ? hostnameLabel.get_height() : 40;
+
+        hostnameLabel.set_position(x, y - l1Height);
         ipLabel.set_position(x, y);
     }
 
+    //
+    // --- FUNÇÃO CORRIGIDA ---
+    //
     _getLocalIP() {
         try {
-            const [ok, out] = GLib.spawn_command_line_sync('hostname -I');
-            if (ok && out)
-                return out.toString().trim().split(' ')[0];
+            const monitor = Gio.NetworkMonitor.get_default();
+            const interfaces = monitor.get_network_interfaces();
+
+            for (const iface of interfaces) {
+                const addresses = iface.get_addresses();
+                for (const addr of addresses) {
+                    // Usar apenas IPv4, não-loopback e não-linklocal
+                    if (addr.get_family() === Gio.SocketFamily.IPV4 &&
+                        !addr.is_loopback() &&
+                        !addr.is_link_local()) {
+
+                        // Retorna o primeiro IP válido encontrado
+                        return addr.to_string();
+                    }
+                }
+            }
         } catch (e) {
-            logError(e);
+            logError(e, 'Falha ao buscar IP local com Gio.NetworkMonitor');
         }
+        // Fallback caso não encontre
         return null;
     }
 };
@@ -96,4 +117,3 @@ const HostnameIPExtension = class HostnameIPExtension {
 function init() {
     return new HostnameIPExtension();
 }
-
