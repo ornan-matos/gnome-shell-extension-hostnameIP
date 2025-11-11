@@ -3,6 +3,7 @@
     "description": "Shows hostname and local IP address on your screen.",
     "uuid": "hostnameIP@ornan-matos",
     "settings-schema": "org.gnome.shell.extensions.hostnameIP",
+    "gettext-domain": "hostnameIP",
     "shell-version": [
         "45",
         "46",
