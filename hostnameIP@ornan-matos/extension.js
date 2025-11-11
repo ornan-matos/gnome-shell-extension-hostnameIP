@@ -121,7 +121,7 @@ export default class HostnameIPExtension extends Extension {
     }
 
     _getLocalIP() {
-        // 1) Tenta resolver o hostname via Gio.Resolver
+        // 1) Tenta resolver o hostname via Gio.Resolver (pega IPv4)
         try {
             const hostname = GLib.get_host_name();
             const resolver = Gio.Resolver.get_default();
@@ -136,7 +136,7 @@ export default class HostnameIPExtension extends Extension {
             logError(e, 'Falha ao obter IP via Gio.Resolver');
         }
 
-        // 2) Fallback: usar `hostname -I` e converter com imports.byteArray
+        // 2) Fallback: usar `hostname -I` e converter manualmente os bytes
         try {
             const [ok, out, err, status] =
                 GLib.spawn_command_line_sync('hostname -I');
@@ -144,9 +144,32 @@ export default class HostnameIPExtension extends Extension {
             if (!ok || status !== 0 || !out)
                 return null;
 
-            // out é um ByteArray / GLib.Bytes → converte para string
-            const ByteArray = imports.byteArray;
-            const stdout = ByteArray.toString(out).trim();
+            // `out` é um array de bytes (Uint8Array / parecido).
+            // Vamos montar uma string usando apenas caracteres ASCII simples.
+            let stdout = '';
+            const length = out.length ?? 0;
 
-// hostn
+            for (let i = 0; i < length; i++) {
+                const byte = out[i];
+                if (byte === 0) // termina em NUL
+                    break;
+                stdout += String.fromCharCode(byte);
+            }
+
+            stdout = stdout.trim();
+
+            // Exemplo: "192.168.1.157 172.17.0.1 ..."
+            const ips = stdout
+                .split(/\s+/)
+                .filter(ip => /^\d+\.\d+\.\d+\.\d+$/.test(ip));
+
+            if (ips.length > 0)
+                return ips[0];
+        } catch (e) {
+            logError(e, 'Falha ao obter IP com hostname -I');
+        }
+
+        return null;
+    }
+}
 
