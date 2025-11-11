@@ -1,12 +1,10 @@
 'use strict';
 
 import St from 'gi://St';
-import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
-import * as ByteArray from 'resource:///org/gnome/gjs/modules/byteArray.js';
 
 export default class HostnameIPExtension extends Extension {
     enable() {
@@ -127,10 +125,12 @@ export default class HostnameIPExtension extends Extension {
             const [ok, out, err, status] =
                 GLib.spawn_command_line_sync('hostname -I');
 
-            if (!ok || status !== 0)
+            if (!ok || status !== 0 || !out)
                 return null;
 
-            const stdout = ByteArray.toString(out).trim();
+            // out é um Uint8Array / ArrayBuffer → converte com TextDecoder
+            const decoder = new TextDecoder('utf-8');
+            const stdout = decoder.decode(out).trim();
 
             // hostname -I → "192.168.1.10 172.17.0.1 ..."
             const ips = stdout
