@@ -8,7 +8,7 @@
     </key>
 
     <key name="l2-horizontal" type="d">
-      <default>0.82</default>
+      <default>0.70</default>
       <summary>Horizontal position of line 2</summary>
     </key>
 
@@ -18,12 +18,12 @@
     </key>
 
     <key name="size-l1" type="i">
-      <default>36</default>
+      <default>26</default>
       <summary>Text size of line 1 (px)</summary>
     </key>
 
     <key name="size-l2" type="i">
-      <default>26</default>
+      <default>16</default>
       <summary>Text size of line 2 (px)</summary>
     </key>
 
