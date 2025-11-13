@@ -15,7 +15,7 @@ O texto é exibido abaixo das janelas (na camada do desktop) e é atualizado aut
 
 1.  **Clone o repositório:**
     ```bash
-    git clone [https://github.com/ornan-matos/gnome-shell-extension-hostnameIP.git](https://github.com/ornan-matos/gnome-shell-extension-hostnameIP.git)
+    git clone https://github.com/ornan-matos/gnome-shell-extension-hostnameIP.git
     ```
 
 2.  **Entre no diretório do repositório:**
@@ -29,18 +29,22 @@ O texto é exibido abaixo das janelas (na camada do desktop) e é atualizado aut
     make
     ```
 
-4.  **Crie um link simbólico para a pasta de extensões do GNOME:**
-    (Este comando usa o nome de diretório `hostnameIP_ornan-matos` que você possui).
+4.  **Crie o diretório**
+    (Este comando server para criar o diretório de extensões local caso não exista).
     ```bash
-    ln -s $(realpath hostnameIP_ornan-matos) ~/.local/share/gnome-shell/extensions/
+    mkdir -p ~/.local/share/gnome-shell/extensions/
     ```
 
-5.  **Recarregue o GNOME Shell:**
-    * Pressione `Alt` + `F2`
-    * Digite `r`
-    * Pressione `Enter`
+5.  **Crie um link simbólico para a pasta de extensões do GNOME:**
+    (Este comando usa o nome de diretório `hostnameIP_ornan-matos` que você possui).
+    ```bash
+    mv hostnameIP@ornan-matos ~/.local/share/gnome-shell/extensions/
+    ```
 
-6.  **Ative a extensão:**
+6.  **Recarregue o GNOME Shell:**
+    (Faça o logoff da sessão wayland e retorne novamente)
+
+7.  **Ative a extensão:**
     Ative a extensão "Show Hostname and IP" usando o aplicativo "Extensões".
 
 ## Agradecimentos
