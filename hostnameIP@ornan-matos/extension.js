@@ -121,7 +121,6 @@ export default class HostnameIPExtension extends Extension {
     }
 
     _getLocalIP() {
-        // 1) Tenta resolver o hostname via Gio.Resolver (pega IPv4)
         try {
             const hostname = GLib.get_host_name();
             const resolver = Gio.Resolver.get_default();
@@ -136,7 +135,6 @@ export default class HostnameIPExtension extends Extension {
             logError(e, 'Falha ao obter IP via Gio.Resolver');
         }
 
-        // 2) Fallback: usar `hostname -I` e converter manualmente os bytes
         try {
             const [ok, out, err, status] =
                 GLib.spawn_command_line_sync('hostname -I');
@@ -144,8 +142,6 @@ export default class HostnameIPExtension extends Extension {
             if (!ok || status !== 0 || !out)
                 return null;
 
-            // `out` é um array de bytes (Uint8Array / parecido).
-            // Vamos montar uma string usando apenas caracteres ASCII simples.
             let stdout = '';
             const length = out.length ?? 0;
 
